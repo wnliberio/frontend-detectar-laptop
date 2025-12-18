@@ -1,0 +1,15 @@
+services:
+  frontend-detectar:
+    build:
+      context: .
+    container_name: frontend-detectar
+    image: frontend-detectar:latest
+    ports:
+      - "${FRONTEND_DETECTAR_PORT:-3200}:80"
+    restart: unless-stopped
+    networks:
+      - mupi
+
+networks:
+  mupi:
+    external: true

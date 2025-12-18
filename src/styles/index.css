@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Tipografía fina y detalles */
+:root {
+  color-scheme: dark;
+}
+
+body {
+  @apply text-stone-100 bg-stone-100;
+}
+
+.button-primary {
+  @apply bg-primary hover:bg-primaryDark text-white font-semibold rounded-xl px-5 py-3 transition shadow-soft;
+}
+
+.input-base {
+  @apply w-full rounded-xl bg-stone-800/70 border border-stone-700 focus:outline-none focus:ring-2 focus:ring-primary/60 focus:border-primary/60 px-4 py-3 placeholder-stone-400 uppercase;
+}
+
+.card {
+  @apply bg-stone-900/60 backdrop-blur border border-stone-800 rounded-2xl p-6 shadow-soft;
+}
+
+.badge {
+  @apply inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs bg-stone-800 border border-stone-700;
+}
+
+/* === Overrides de legibilidad para la tabla del Dashboard === */
+table thead th {
+  color: #ffffff !important;
+  /* cabecera blanca */
+}
+
+/* Celdas del cuerpo: texto oscuro y sin opacidad */
+table tbody td {
+  color: #010409 !important;
+  /* gris muy oscuro */
+  font-weight: 500;
+  /* un pelín más grueso */
+}
+
+/* Filas del cuerpo: sin desaturado/opacity y fondo blanco */
+table tbody tr {
+  opacity: 1 !important;
+  filter: none !important;
+  background: #ffffff !important;
+}
+
+/* Hover agradable */
+table tbody tr:hover {
+  background: #f6f9ff !important;
+}
+
+/* Badge de estado: que el texto siempre sea legible */
+.badge,
+.status-chip {
+  color: #ffffff !important;
+}
