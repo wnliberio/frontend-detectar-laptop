@@ -2,6 +2,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import ModalDetallesMejorado from '/src/components/ModalDetallesMejorado';
 import { formatearEstadoConsulta, iniciarDaemon, detenerDaemon, obtenerEstadoDaemon } from '../lib/api';
+import ConfirmModal from '../components/ConfirmModal';
+import { toast } from "react-toastify";
+
 
 const DashboardMonitoreo = () => {
   const [clientes, setClientes] = useState([]);
@@ -10,6 +13,10 @@ const DashboardMonitoreo = () => {
   const [busqueda, setBusqueda] = useState('');
   const [clienteSeleccionado, setClienteSeleccionado] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [modalConfirmOpen, setModalConfirmOpen] = useState(false);
+  const [modalStopOpen, setModalStopOpen] = useState(false);
+
+
   
   // Estado del daemon
   const [daemonState, setDaemonState] = useState({
@@ -46,14 +53,17 @@ const DashboardMonitoreo = () => {
 
   const handleIniciarDaemon = async () => {
     if (daemonState.loading) return;
-    
+      
     try {
       setDaemonState(prev => ({ ...prev, loading: true }));
       const res = await fetch(`${BASE}/daemon/iniciar`, { method: 'POST' });
       const data = await res.json();
       
       if (data.success) {
-        alert('✅ Daemon iniciado correctamente\nEl sistema procesará automáticamente clientes pendientes cada 30 minutos.');
+        
+        toast.success('Consultas iniciadas correctamente');
+      
+        {/*Simeplemente aqui se actualiza el estado */}
         setDaemonState({ running: true, loading: false });
       } else {
         alert(`⚠️ ${data.message}`);
@@ -65,30 +75,28 @@ const DashboardMonitoreo = () => {
     }
   };
 
-  const handleDetenerDaemon = async () => {
-    if (daemonState.loading) return;
-    
-    if (!confirm('¿Detener el procesamiento automático?\n\nEl daemon terminará el cliente actual y se detendrá.')) {
-      return;
-    }
-    
-    try {
-      setDaemonState(prev => ({ ...prev, loading: true }));
-      const res = await fetch(`${BASE}/daemon/detener`, { method: 'POST' });
-      const data = await res.json();
-      
-      if (data.success) {
-        alert('✅ Daemon detenido correctamente');
-        setDaemonState({ running: false, loading: false });
-      } else {
-        alert(`⚠️ ${data.message}`);
-        setDaemonState(prev => ({ ...prev, loading: false }));
-      }
-    } catch (error) {
-      alert(`❌ Error deteniendo daemon: ${error.message}`);
+const handleDetenerDaemon = async () => {
+  if (daemonState.loading) return;  // no hacer doble click
+
+  try {
+    setDaemonState(prev => ({ ...prev, loading: true }));
+
+    const res = await fetch(`${BASE}/daemon/detener`, { method: 'POST' });
+    const data = await res.json();
+
+    if (data.success) {
+      toast.success('Daemon detenido correctamente');
+      setDaemonState({ running: false, loading: false });
+    } else {
+      toast.warn(`⚠️ ${data.message}`);
       setDaemonState(prev => ({ ...prev, loading: false }));
     }
-  };
+  } catch (error) {
+    toast.error(`❌ Error deteniendo daemon: ${error.message}`);
+    setDaemonState(prev => ({ ...prev, loading: false }));
+  }
+};
+
 
   // ===== CARGAR CLIENTES =====
   
@@ -250,13 +258,13 @@ const DashboardMonitoreo = () => {
             fontWeight: '500'
           }}
         >
-          🔄 Refrescar
+         REFRESCAR
         </button>
 
         {/* Daemon Controls */}
         {daemonState.running ? (
           <button
-            onClick={handleDetenerDaemon}
+            onClick={() => setModalStopOpen(true)}  // ← abre modal en vez de ejecutar
             disabled={daemonState.loading}
             style={{
               padding: '8px 16px',
@@ -269,11 +277,11 @@ const DashboardMonitoreo = () => {
               fontWeight: '500'
             }}
           >
-            ⏹️  Detener Daemon
+           DETENER CONSULTA
           </button>
         ) : (
           <button
-            onClick={handleIniciarDaemon}
+            onClick={() => setModalConfirmOpen(true)}
             disabled={daemonState.loading}
             style={{
               padding: '8px 16px',
@@ -286,7 +294,7 @@ const DashboardMonitoreo = () => {
               fontWeight: '500'
             }}
           >
-            ▶️  Iniciar Daemon
+             INICIAR CONSULTA
           </button>
         )}
 
@@ -295,7 +303,7 @@ const DashboardMonitoreo = () => {
           alignItems: 'center',
           gap: '8px',
           padding: '8px 12px',
-          backgroundColor: daemonState.running ? '#dbeafe' : '#fee2e2',
+          backgroundColor: daemonState.running ? '#b2d1faff' : '#f5b1b1ff',
           borderRadius: '6px',
           fontSize: '13px',
           fontWeight: '500'
@@ -304,9 +312,11 @@ const DashboardMonitoreo = () => {
             width: '8px',
             height: '8px',
             borderRadius: '50%',
-            backgroundColor: daemonState.running ? '#10b981' : '#ef4444'
+            backgroundColor: daemonState.running ? '#0e8d62ff' : '#ef4444'
           }}></span>
-          {daemonState.running ? 'Daemon Activo' : 'Daemon Inactivo'}
+          {daemonState.running ? 'CONSULTA ACTIVA' : 'CONSULTA INACTIVA'}
+        
+        
         </div>
       </div>
 
@@ -321,7 +331,7 @@ const DashboardMonitoreo = () => {
           width: '100%',
           borderCollapse: 'collapse'
         }}>
-          <thead style={{ backgroundColor: '#f3f4f6', borderBottom: '1px solid #e5e7eb' }}>
+          <thead style={{ backgroundColor: '#4b6392ff', borderBottom: '1px solid #e5e7eb' }}>
             <tr>
               <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', fontSize: '13px' }}>ID</th>
               <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', fontSize: '13px' }}>NOMBRES</th>
@@ -332,7 +342,7 @@ const DashboardMonitoreo = () => {
             </tr>
           </thead>
           <tbody>
-            {loading && (
+            {/*{loading && (
               <tr>
                 <td colSpan="6" style={{ padding: '24px', textAlign: 'center', color: '#9ca3af' }}>
                   Cargando...
@@ -345,7 +355,7 @@ const DashboardMonitoreo = () => {
                   No hay clientes para mostrar
                 </td>
               </tr>
-            )}
+            )}*/}
             {clientes.map((cliente, index) => (
               <tr key={cliente.id} style={{
                 borderBottom: '1px solid #e5e7eb',
@@ -409,7 +419,39 @@ const DashboardMonitoreo = () => {
           onClose={cerrarModal}
         />
       )}
+      {/* Modal para INICIAR daemon */}
+      <ConfirmModal
+        open={modalConfirmOpen}
+        loading={daemonState.loading}
+        onCancel={() => setModalConfirmOpen(false)}
+        onConfirm={() => {
+          setModalConfirmOpen(false);
+          handleIniciarDaemon();
+        }}
+        title="Confirmación"
+        mainMessage="¿Está seguro de Iniciar las Consultas?"
+        subMessage="Se procesa una consulta por solicitud cada 30 minutos y solo para solicitudes en estado “Trámite”."
+        confirmText="Sí, Iniciar"
+      />
+
+      {/* Modal para DETENER daemon */}
+      <ConfirmModal
+        open={modalStopOpen}
+        loading={daemonState.loading}
+        onCancel={() => setModalStopOpen(false)}
+        onConfirm={() => {
+          setModalStopOpen(false);
+          handleDetenerDaemon();
+        }}
+        title="Confirmación"
+        mainMessage="¿Está seguro de detener las consultas?"
+        subMessage="Se finalizará y se detendrá completamente."
+        confirmText="Sí, Detener"
+      />
+
+
     </div>
+    
   );
 };
 

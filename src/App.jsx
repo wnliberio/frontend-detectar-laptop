@@ -2,6 +2,9 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import DashboardMonitoreo from './components/DashboardMonitoreo';
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 
 // Configuración desde variables de entorno
 const MENU_URL = import.meta.env.VITE_MENU_URL;
@@ -33,7 +36,7 @@ function Navigation() {
           {/* Logo/Título */}
           <div>
             <h1 style={{ fontSize: '28px', fontWeight: 'bold', color: '#1f2937', marginBottom: '8px' }}>
-         Consultas - Función Judicial
+         CONSULTAS - FUNCIÓN JUDICIAL
         </h1>
           </div>
           
@@ -122,6 +125,8 @@ function Pagina404() {
   );
 }
 
+
+
 // Componente principal
 function App() {
   const [authChecking, setAuthChecking] = useState(true);
@@ -170,6 +175,14 @@ useEffect(() => {
     <Router>
       <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb', display: 'flex', flexDirection: 'column' }}>
         
+        <ToastContainer
+          position="top-right"
+          autoClose={4000}
+          hideProgressBar={false}
+          newestOnTop={true}
+          closeOnClick
+        />
+
         {/* Navegación */}
         <Navigation /> 
 
@@ -199,7 +212,7 @@ useEffect(() => {
             alignItems: 'center'
           }}>
             <p style={{ margin: 0, fontSize: '14px', color: '#6b7280' }}>
-              © 2025 Sistema de Consultas Automatizadas - Versión 3.0
+              © 2025 Sistema de Consultas Automatizadas - Versión 1.0
             </p>
             <div style={{ 
               display: 'flex', 
@@ -208,7 +221,7 @@ useEffect(() => {
               fontSize: '12px',
               color: '#9ca3af'
             }}>
-              <span>React + FastAPI</span>
+              
               <span>•</span>
               <span>Procesamiento Automático</span>
               <span>•</span>

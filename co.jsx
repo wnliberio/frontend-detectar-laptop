@@ -269,7 +269,7 @@ const DashboardMonitoreo = () => {
               fontWeight: '500'
             }}
           >
-            ⏹️  Detener Daemon
+            ⏹️  DETENER CONSULTA
           </button>
         ) : (
           <button
@@ -286,7 +286,7 @@ const DashboardMonitoreo = () => {
               fontWeight: '500'
             }}
           >
-            ▶️  Iniciar Daemon
+            ▶️  INICIAR CONSULTA
           </button>
         )}
 
@@ -306,7 +306,7 @@ const DashboardMonitoreo = () => {
             borderRadius: '50%',
             backgroundColor: daemonState.running ? '#10b981' : '#ef4444'
           }}></span>
-          {daemonState.running ? 'Daemon Activo' : 'Daemon Inactivo'}
+          {daemonState.running ? 'CONSULTA ACTIVA' : 'CONSULTA INACTIVA'}
         </div>
       </div>
 
