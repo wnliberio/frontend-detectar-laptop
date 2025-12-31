@@ -1,3 +1,6 @@
+# docker-compose.yml - Frontend Detectar con Traefik
+# Ubicación: frontend-detectar/docker-compose.yml
+
 services:
   frontend-detectar:
     build:
@@ -9,6 +12,12 @@ services:
     restart: unless-stopped
     networks:
       - mupi
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.detectar.rule=Host(`detectar.10-161-68-134.nip.io`) && PathPrefix(`/`)
+      - traefik.http.routers.detectar.entrypoints=web
+      - traefik.http.routers.detectar.priority=1
+      - traefik.http.services.detectar.loadbalancer.server.port=80
 
 networks:
   mupi:

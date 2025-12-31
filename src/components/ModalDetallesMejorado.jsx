@@ -1,4 +1,4 @@
-// src/components/ModalDetallesMejorado.jsx - VERSIÓN ACTUALIZADA
+// src/components/ModalDetallesMejorado.jsx - VERSIÓN ACTUALIZADA PARA PDF
 import React, { useState } from 'react';
 
 const ModalDetallesMejorado = ({ 
@@ -87,8 +87,9 @@ const ModalDetallesMejorado = ({
       link.href = url;
       
       // Obtener nombre del archivo del header o generar uno
+      // ACTUALIZADO: Formato nuevo {CEDULA}_{ID_SOLICITUD}_FUNCIONJUDICIAL_{proceso_id}.pdf
       const disposition = response.headers.get('Content-Disposition');
-      let filename = `reporte_${cliente.APELLIDOS_CLIENTE || 'cliente'}_${cliente.NOMBRES_CLIENTE || ''}.docx`;
+      let filename = `${cliente.CEDULA || 'SIN_CEDULA'}_${cliente.ID_SOLICITUD || 'SIN_ID'}_FUNCIONJUDICIAL.pdf`;
       
       if (disposition) {
         const filenameMatch = disposition.match(/filename="?(.+)"?/);
@@ -160,60 +161,52 @@ const ModalDetallesMejorado = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
+      <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
         
         {/* ===== HEADER ===== */}
-        <div className="flex justify-between items-center p-6 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-blue-700">
-          <div>
-            <h2 className="text-2xl font-bold text-white">
-              Detalles del Cliente
-            </h2>
-            <p className="text-blue-100 mt-1 text-lg">
-              {construirNombreCompleto(cliente.APELLIDOS_CLIENTE, cliente.NOMBRES_CLIENTE)}
-              {cliente.CEDULA && ` • CI: ${cliente.CEDULA}`}
-            </p>
+        <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 rounded-t-xl">
+          <div className="flex justify-between items-start">
+            <div>
+              <h2 className="text-xl font-bold mb-1">
+                Detalles del Cliente
+              </h2>
+              <p className="text-blue-100 text-lg">
+                {construirNombreCompleto(cliente.APELLIDOS_CLIENTE, cliente.NOMBRES_CLIENTE)} • CI: {valorONoAplica(cliente.CEDULA)}
+              </p>
+            </div>
+            <button
+              onClick={onClose}
+              className="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-2 transition-colors"
+              title="Cerrar"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
           </div>
-          
-          <button
-            onClick={onClose}
-            className="text-white hover:text-blue-200 text-3xl font-light transition-colors p-2"
-            title="Cerrar"
-          >
-            ×
-          </button>
         </div>
 
-        {/* ===== CONTENIDO ===== */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        {/* ===== BODY ===== */}
+        <div className="p-6 space-y-6">
           
-          {/* Error si existe */}
+          {/* Error message */}
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <div className="flex items-center">
-                <span className="text-red-500 text-xl mr-3">⚠️</span>
-                <div className="text-red-700">
-                  <p className="font-medium">Error</p>
-                  <p className="text-sm">{error}</p>
-                </div>
-                <button 
-                  onClick={() => setError(null)}
-                  className="ml-auto text-red-500 hover:text-red-700"
-                >
-                  ✕
-                </button>
-              </div>
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center gap-2">
+              <span>❌</span>
+              {error}
+              <button onClick={() => setError(null)} className="ml-auto text-red-500 hover:text-red-700">✕</button>
             </div>
           )}
 
           {/* ===== SECCIÓN 1: INFORMACIÓN DE LA SOLICITUD ===== */}
           <div className="bg-gray-50 rounded-lg p-5 border border-gray-200">
             <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-             <span className="mr-2 text-blue-500">
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
-    <path fill-rule="evenodd" d="M5.625 1.5c-1.036 0-1.875.84-1.875 1.875v17.25c0 1.035.84 1.875 1.875 1.875h12.75c1.035 0 1.875-.84 1.875-1.875V12.75A3.75 3.75 0 0 0 16.5 9h-1.875a1.875 1.875 0 0 1-1.875-1.875V5.25A3.75 3.75 0 0 0 9 1.5H5.625ZM7.5 15a.75.75 0 0 1 .75-.75h7.5a.75.75 0 0 1 0 1.5h-7.5A.75.75 0 0 1 7.5 15Zm.75 2.25a.75.75 0 0 0 0 1.5H12a.75.75 0 0 0 0-1.5H8.25Z" clip-rule="evenodd" />
-    <path d="M12.971 1.816A5.23 5.23 0 0 1 14.25 5.25v1.875c0 .207.168.375.375.375H16.5a5.23 5.23 0 0 1 3.434 1.279 9.768 9.768 0 0 0-6.963-6.963Z" />
-  </svg>
-</span>
+              <span className="mr-2">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 text-blue-500">
+                  <path fillRule="evenodd" d="M5.625 1.5c-1.036 0-1.875.84-1.875 1.875v17.25c0 1.035.84 1.875 1.875 1.875h12.75c1.035 0 1.875-.84 1.875-1.875V12.75A3.75 3.75 0 0016.5 9h-1.875a1.875 1.875 0 01-1.875-1.875V5.25A3.75 3.75 0 009 1.5H5.625zM7.5 15a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5A.75.75 0 017.5 15zm.75 2.25a.75.75 0 000 1.5H12a.75.75 0 000-1.5H8.25z" clipRule="evenodd" />
+                  <path d="M12.971 1.816A5.23 5.23 0 0114.25 5.25v1.875c0 .207.168.375.375.375H16.5a5.23 5.23 0 013.434 1.279 9.768 9.768 0 00-6.963-6.963z" />
+                </svg>
+              </span>
               Información de la Solicitud
             </h3>
             
@@ -253,10 +246,11 @@ const ModalDetallesMejorado = ({
           {/* ===== SECCIÓN 2: PERSONAS RELACIONADAS ===== */}
           <div className="bg-blue-50 rounded-lg p-5 border border-blue-200">
             <h3 className="text-lg font-semibold text-blue-800 mb-4 flex items-center">
-              <span className="mr-2"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-  <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" />
-</svg>
-</span>
+              <span className="mr-2">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-6 h-6">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" />
+                </svg>
+              </span>
               Personas Relacionadas
             </h3>
             
@@ -264,20 +258,11 @@ const ModalDetallesMejorado = ({
               {/* Cónyuge */}
               <div className={`p-4 rounded-lg border ${tieneConyuge ? 'bg-white border-blue-200' : 'bg-gray-50 border-gray-200'}`}>
                 <div className="flex items-center mb-2">
-                  <span className="text-xl mr-2"> <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="#da0c3fff"
-    stroke-width="2"
-    stroke-linecap="round"
-    stroke-linejoin="round"
-    className="lucide lucide-heart"
-  >
-    <path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5"/>
-  </svg></span>
+                  <span className="text-xl mr-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#da0c3fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-heart">
+                      <path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5"/>
+                    </svg>
+                  </span>
                   <span className="font-semibold text-gray-700">Cónyuge</span>
                 </div>
                 {tieneConyuge ? (
@@ -297,24 +282,15 @@ const ModalDetallesMejorado = ({
               {/* Codeudor */}
               <div className={`p-4 rounded-lg border ${tieneCodeudor ? 'bg-white border-blue-200' : 'bg-gray-50 border-gray-200'}`}>
                 <div className="flex items-center mb-2">
-                  <span className="text-xl mr-2"><svg
-    xmlns="http://www.w3.org/2000/svg"
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="#3b82f6"
-    stroke-width="2"
-    stroke-linecap="round"
-    stroke-linejoin="round"
-    className="lucide lucide-handshake"
-  >
-    <path d="m11 17 2 2a1 1 0 1 0 3-3"/>
-    <path d="m14 14 2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06-.87l.47.28a2 2 0 0 0 1.42.25L21 4"/>
-    <path d="m21 3 1 11h-2"/>
-    <path d="M3 3 2 14l6.5 6.5a1 1 0 1 0 3-3"/>
-    <path d="M3 4h8"/>
-  </svg></span>
+                  <span className="text-xl mr-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-handshake">
+                      <path d="m11 17 2 2a1 1 0 1 0 3-3"/>
+                      <path d="m14 14 2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06-.87l.47.28a2 2 0 0 0 1.42.25L21 4"/>
+                      <path d="m21 3 1 11h-2"/>
+                      <path d="M3 3 2 14l6.5 6.5a1 1 0 1 0 3-3"/>
+                      <path d="M3 4h8"/>
+                    </svg>
+                  </span>
                   <span className="font-semibold text-gray-700">Codeudor</span>
                 </div>
                 {tieneCodeudor ? (
@@ -336,21 +312,13 @@ const ModalDetallesMejorado = ({
           {/* ===== SECCIÓN 3: ESTADO DEL PROCESO ===== */}
           <div className="bg-gray-50 rounded-lg p-5 border border-gray-200">
             <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-              <span className="mr-2">  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width="24"
-    height="24"
-    fill="none"
-    stroke="#10b981"
-    stroke-width="2"
-    stroke-linecap="round"
-    stroke-linejoin="round"
-    className="lucide lucide-bar-chart-2"
-  >
-    <line x1="18" y1="20" x2="18" y2="10"/>
-    <line x1="12" y1="20" x2="12" y2="4"/>
-    <line x1="6" y1="20" x2="6" y2="14"/>
-  </svg></span>
+              <span className="mr-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-bar-chart-2">
+                  <line x1="18" y1="20" x2="18" y2="10"/>
+                  <line x1="12" y1="20" x2="12" y2="4"/>
+                  <line x1="6" y1="20" x2="6" y2="14"/>
+                </svg>
+              </span>
               Estado del Proceso
             </h3>
             
@@ -391,7 +359,7 @@ const ModalDetallesMejorado = ({
         </div>
 
         {/* ===== FOOTER ===== */}
-        <div className="border-t border-gray-200 p-6 bg-gray-50">
+        <div className="border-t border-gray-200 p-6 bg-gray-50 rounded-b-xl">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
             
             {/* Mensaje de estado */}
@@ -399,15 +367,15 @@ const ModalDetallesMejorado = ({
               {esProcesado && (
                 <span className="text-green-600 font-medium flex items-center">
                   <span className="mr-2">✅</span>
-                  Proceso completado • Reporte disponible para descarga
+                  Proceso completado • Reporte PDF disponible para descarga
                 </span>
               )}
-              {cliente.ESTADO_CONSULTA === 'En_Proceso' || cliente.ESTADO_CONSULTA === 'Procesando' ? (
+              {(cliente.ESTADO_CONSULTA === 'En_Proceso' || cliente.ESTADO_CONSULTA === 'Procesando') && (
                 <span className="text-blue-600 font-medium flex items-center">
                   <span className="mr-2">🔄</span>
                   Procesando consulta...
                 </span>
-              ) : null}
+              )}
               {cliente.ESTADO_CONSULTA === 'Pendiente' && (
                 <span className="text-yellow-600 font-medium flex items-center">
                   <span className="mr-2">⏳</span>
@@ -430,11 +398,11 @@ const ModalDetallesMejorado = ({
                   onClick={descargarReporte}
                   disabled={loading}
                   className="flex items-center px-5 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-md font-medium"
-                  title="Descargar Reporte DOCX"
+                  title="Descargar Reporte PDF"
                 >
                   {loading ? (
                     <>
-                      <svg className="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
@@ -442,20 +410,19 @@ const ModalDetallesMejorado = ({
                     </>
                   ) : (
                     <>
-                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                          d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
                       </svg>
-                      Descargar Reporte
+                      Descargar PDF
                     </>
                   )}
                 </button>
               )}
-
-              {/* Botón cerrar */}
+              
+              {/* Botón de cerrar */}
               <button
                 onClick={onClose}
-                className="px-6 py-2.5 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-medium"
+                className="px-5 py-2.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
               >
                 Cerrar
               </button>
