@@ -12,10 +12,20 @@ const DashboardMonitoreo = () => {
   const [filtroEstado, setFiltroEstado] = useState('Todos');
   const [busqueda, setBusqueda] = useState('');
   const [clienteSeleccionado, setClienteSeleccionado] = useState(null);
+  const [modalSyncOpen, setModalSyncOpen] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [modalConfirmOpen, setModalConfirmOpen] = useState(false);
   const [modalStopOpen, setModalStopOpen] = useState(false);
 
+  // ===== Estado para sincronización manual =====
+  const [syncDropdownOpen, setSyncDropdownOpen] = useState(false);
+  const [syncFechaDesde, setSyncFechaDesde] = useState('');
+  const [syncFechaHasta, setSyncFechaHasta] = useState('');
+  const [syncLoading, setSyncLoading] = useState(false);
+
+  // ===== NUEVO: Estado para días faltantes =====
+  const [diasFaltantesLoading, setDiasFaltantesLoading] = useState(false);
+  const [diasFaltantesData, setDiasFaltantesData] = useState(null);
 
   
   // Estado del daemon
@@ -97,6 +107,86 @@ const handleDetenerDaemon = async () => {
   }
 };
 
+  // ===== Función para ejecutar sincronización manual =====
+  const handleEjecutarSincronizacion = async () => {
+    // Validar fechas
+    if (!syncFechaDesde || !syncFechaHasta) {
+      toast.warn('Debe seleccionar ambas fechas');
+      return;
+    }
+
+    if (syncFechaDesde > syncFechaHasta) {
+      toast.warn('La fecha "desde" no puede ser mayor que la fecha "hasta"');
+      return;
+    }
+
+    try {
+      setSyncLoading(true);
+      
+      const url = `${BASE}/sync/iniciar?fecha_desde=${syncFechaDesde}&fecha_hasta=${syncFechaHasta}`;
+      const res = await fetch(url, { method: 'POST' });
+      const data = await res.json();
+
+      if (data.exito) {
+        toast.success(
+          `✅ Sincronización exitosa: ${data.registros_insertados} nuevos, ${data.registros_duplicados} duplicados`
+        );
+        // Cerrar dropdown y limpiar fechas
+        setSyncDropdownOpen(false);
+        setSyncFechaDesde('');
+        setSyncFechaHasta('');
+        // Limpiar días faltantes
+        setDiasFaltantesData(null);
+        // Recargar clientes
+        cargarClientes();
+      } else {
+        toast.error(`❌ Error: ${data.mensaje || data.detail || 'Error desconocido'}`);
+      }
+    } catch (error) {
+      toast.error(`❌ Error en sincronización: ${error.message}`);
+    } finally {
+      setSyncLoading(false);
+    }
+  };
+
+  // ===== NUEVO: Función para obtener días faltantes =====
+  const handleVerDiasFaltantes = async () => {
+    // Validar fechas
+    if (!syncFechaDesde || !syncFechaHasta) {
+      toast.warn('Debe seleccionar ambas fechas para consultar días faltantes');
+      return;
+    }
+
+    if (syncFechaDesde > syncFechaHasta) {
+      toast.warn('La fecha "desde" no puede ser mayor que la fecha "hasta"');
+      return;
+    }
+
+    try {
+      setDiasFaltantesLoading(true);
+      setDiasFaltantesData(null);
+      
+      const url = `${BASE}/sync/dias-faltantes?fecha_desde=${syncFechaDesde}&fecha_hasta=${syncFechaHasta}`;
+      const res = await fetch(url);
+      const data = await res.json();
+
+      if (res.ok) {
+        setDiasFaltantesData(data);
+        if (data.dias_faltantes === 0) {
+          toast.success('✅ Todos los días del rango están sincronizados');
+        } else {
+          toast.info(`⚠️ Se encontraron ${data.dias_faltantes} días sin sincronizar`);
+        }
+      } else {
+        toast.error(`❌ Error: ${data.detail || 'Error consultando días faltantes'}`);
+      }
+    } catch (error) {
+      toast.error(`❌ Error consultando días faltantes: ${error.message}`);
+    } finally {
+      setDiasFaltantesLoading(false);
+    }
+  };
+
 
   // ===== CARGAR CLIENTES =====
   
@@ -154,6 +244,18 @@ const handleDetenerDaemon = async () => {
     
     return () => clearInterval(interval);
   }, [filtroEstado, busqueda]);
+
+  // ===== Cerrar dropdown al hacer clic fuera =====
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (syncDropdownOpen && !event.target.closest('.sync-dropdown-container')) {
+        setSyncDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [syncDropdownOpen]);
 
   // ===== HELPERS =====
   
@@ -244,7 +346,210 @@ const handleDetenerDaemon = async () => {
           }}
         />
 
-        <button
+        {/* ===== Botón de Sincronización con Dropdown ===== */}
+        <div className="sync-dropdown-container" style={{ position: 'relative' }}>
+          <button
+            onClick={() => setSyncDropdownOpen(!syncDropdownOpen)}
+            style={{
+              padding: '8px 16px',
+              backgroundColor: '#6366f1',
+              color: 'white',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: '500',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            <span>🔄</span>
+            SINCRONIZACIÓN
+            <span style={{ 
+              transform: syncDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+              transition: 'transform 0.2s'
+            }}>▼</span>
+          </button>
+
+          {/* Dropdown Panel */}
+          {syncDropdownOpen && (
+            <div style={{
+              position: 'absolute',
+              top: '100%',
+              left: '0',
+              marginTop: '8px',
+              backgroundColor: 'white',
+              borderRadius: '8px',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+              padding: '16px',
+              zIndex: 1000,
+              minWidth: '300px',
+              border: '1px solid #e5e7eb'
+            }}>
+              <div style={{ 
+                fontWeight: '600', 
+                marginBottom: '12px', 
+                color: '#374151',
+                fontSize: '14px'
+              }}>
+                Rango de fechas para sincronizar
+              </div>
+
+              <div style={{ marginBottom: '12px' }}>
+                <label style={{ 
+                  display: 'block', 
+                  fontSize: '12px', 
+                  color: '#6b7280', 
+                  marginBottom: '4px' 
+                }}>
+                  Fecha solicitada desde:
+                </label>
+                <input
+                  type="date"
+                  value={syncFechaDesde}
+                  onChange={(e) => {
+                    setSyncFechaDesde(e.target.value);
+                    setDiasFaltantesData(null); // Limpiar resultados al cambiar fecha
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    borderRadius: '6px',
+                    border: '1px solid #e5e7eb',
+                    fontSize: '14px'
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ 
+                  display: 'block', 
+                  fontSize: '12px', 
+                  color: '#6b7280', 
+                  marginBottom: '4px' 
+                }}>
+                  Fecha solicitada hasta:
+                </label>
+                <input
+                  type="date"
+                  value={syncFechaHasta}
+                  onChange={(e) => {
+                    setSyncFechaHasta(e.target.value);
+                    setDiasFaltantesData(null); // Limpiar resultados al cambiar fecha
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    borderRadius: '6px',
+                    border: '1px solid #e5e7eb',
+                    fontSize: '14px'
+                  }}
+                />
+              </div>
+
+              {/* Botón Ejecutar Sincronización */}
+              <button
+                onClick={() => setModalSyncOpen(true)}
+                disabled={syncLoading || !syncFechaDesde || !syncFechaHasta}
+                style={{
+                  width: '100%',
+                  padding: '10px 16px',
+                  backgroundColor: syncLoading ? '#9ca3af' : '#8b5cf6',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: syncLoading ? 'not-allowed' : 'pointer',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  marginBottom: '8px'
+                }}
+              >
+                {syncLoading ? '⏳ Sincronizando...' : 'EJECUTAR SINCRONIZACIÓN'}
+              </button>
+
+              {/* NUEVO: Botón Ver Días Faltantes */}
+              <button
+                onClick={handleVerDiasFaltantes}
+                disabled={diasFaltantesLoading || !syncFechaDesde || !syncFechaHasta}
+                style={{
+                  width: '100%',
+                  padding: '10px 16px',
+                  backgroundColor: diasFaltantesLoading ? '#9ca3af' : '#f59e0b',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: diasFaltantesLoading ? 'not-allowed' : 'pointer',
+                  fontSize: '14px',
+                  fontWeight: '500'
+                }}
+              >
+                {diasFaltantesLoading ? ' Consultando...' : 'VER DÍAS FALTANTES'}
+              </button>
+
+              {/* Mostrar resultado de días faltantes */}
+              {diasFaltantesData && (
+                <div style={{
+                  marginTop: '12px',
+                  padding: '12px',
+                  backgroundColor: diasFaltantesData.dias_faltantes > 0 ? '#fef3c7' : '#d1fae5',
+                  borderRadius: '6px',
+                  border: `1px solid ${diasFaltantesData.dias_faltantes > 0 ? '#f59e0b' : '#10b981'}`
+                }}>
+                  <div style={{
+                    fontWeight: '600',
+                    fontSize: '13px',
+                    color: diasFaltantesData.dias_faltantes > 0 ? '#92400e' : '#065f46',
+                    marginBottom: '8px'
+                  }}>
+                    {diasFaltantesData.dias_faltantes > 0 
+                      ? `⚠️ ${diasFaltantesData.dias_faltantes} días sin sincronizar`
+                      : '✅ Todos los días están sincronizados'
+                    }
+                  </div>
+                  
+                  <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '8px' }}>
+                    Rango: {diasFaltantesData.total_dias_rango} días | 
+                    Sincronizados: {diasFaltantesData.dias_sincronizados}
+                  </div>
+
+                  {/* Lista de días faltantes */}
+                  {diasFaltantesData.dias_faltantes > 0 && diasFaltantesData.lista_dias_faltantes && (
+                    <div style={{
+                      maxHeight: '150px',
+                      overflowY: 'auto',
+                      fontSize: '12px',
+                      color: '#374151'
+                    }}>
+                      {diasFaltantesData.lista_dias_faltantes.map((dia, index) => (
+                        <div key={index} style={{
+                          padding: '4px 8px',
+                          backgroundColor: 'white',
+                          borderRadius: '4px',
+                          marginBottom: '4px',
+                          border: '1px solid #e5e7eb'
+                        }}>
+                          📅 {dia}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div style={{ 
+                marginTop: '12px', 
+                fontSize: '11px', 
+                color: '#9ca3af',
+                textAlign: 'center'
+              }}>
+                Los registros duplicados se ignorarán automáticamente
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* <button
           onClick={cargarClientes}
           disabled={loading}
           style={{
@@ -259,7 +564,7 @@ const handleDetenerDaemon = async () => {
           }}
         >
          REFRESCAR
-        </button>
+        </button>*/}
 
         {/* Daemon Controls */}
         {daemonState.running ? (
@@ -430,7 +735,7 @@ const handleDetenerDaemon = async () => {
         }}
         title="Confirmación"
         mainMessage="¿Está seguro de Iniciar las Consultas?"
-        subMessage="Se procesa una consulta por solicitud cada 30 minutos y solo para solicitudes en estado “Trámite”."
+        subMessage="Se procesa una consulta por solicitud cada 30 minutos y solo para solicitudes en estado Trámite."
         confirmText="Sí, Iniciar"
       />
 
@@ -447,6 +752,20 @@ const handleDetenerDaemon = async () => {
         mainMessage="¿Está seguro de detener las consultas?"
         subMessage="Se finalizará y se detendrá completamente."
         confirmText="Sí, Detener"
+      />
+      {/* Modal para EJECUTAR SINCRONIZACIÓN */}
+      <ConfirmModal
+        open={modalSyncOpen}
+        loading={syncLoading}
+        onCancel={() => setModalSyncOpen(false)}
+        onConfirm={() => {
+          setModalSyncOpen(false);
+          handleEjecutarSincronizacion();
+        }}
+        title="Confirmación"
+        mainMessage="¿Está seguro de ejecutar la sincronización?"
+        subMessage={`Se sincronizarán los registros del ${syncFechaDesde || '---'} al ${syncFechaHasta || '---'}. Los duplicados se ignorarán automáticamente.`}
+        confirmText="Sí, Sincronizar"
       />
 
 
